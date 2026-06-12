@@ -18,8 +18,9 @@ public sealed class ArduinoSpeakerSequencer : MonoBehaviour
     [SerializeField] private int baudRate = 115200;
     [SerializeField] private int readTimeoutMs = 50;
     [SerializeField] private int writeTimeoutMs = 100;
-    [SerializeField] private bool connectOnStart;
-    [SerializeField] private bool playOnStart;
+    [SerializeField] private bool connectOnStart = true;
+    [SerializeField] private bool playOnStart = true;
+    [SerializeField] private bool enableKeyboardShortcuts = true;
 
     [Header("Computer Audio")]
     [Tooltip("Optional. Leave empty to use or auto-create an AudioSource on this GameObject.")]
@@ -89,6 +90,23 @@ public sealed class ArduinoSpeakerSequencer : MonoBehaviour
         if (playOnStart)
         {
             PlaySequence();
+        }
+    }
+
+    private void Update()
+    {
+        if (!enableKeyboardShortcuts)
+        {
+            return;
+        }
+
+        if (Input.GetKeyDown(KeyCode.P))
+        {
+            PlaySequence();
+        }
+        else if (Input.GetKeyDown(KeyCode.S))
+        {
+            StopSequence();
         }
     }
 
