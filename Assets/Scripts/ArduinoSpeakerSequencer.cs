@@ -9,6 +9,7 @@ public sealed class ArduinoSpeakerSequencer : MonoBehaviour
     private sealed class SpeakerGroup
     {
         public string name;
+        [Tooltip("Relay/speaker module numbers to turn on for this step. Use 1-20.")]
         public int[] speakerNumbers;
     }
 
@@ -20,27 +21,31 @@ public sealed class ArduinoSpeakerSequencer : MonoBehaviour
     [SerializeField] private bool connectOnStart;
     [SerializeField] private bool playOnStart;
 
-    [Header("Playback")]
+    [Header("Computer Audio")]
     [Tooltip("Optional. Leave empty to use or auto-create an AudioSource on this GameObject.")]
     public AudioSource audioSource;
-    [Tooltip("Drag the preset audio clip here. The same clip will play for every speaker group.")]
+    [Tooltip("Drag the music clip here. Unity plays this through the computer AUX output.")]
     public AudioClip presetAudio;
-    [Tooltip("Keep this enabled when the computer audio output feeds the amplifier.")]
+    [Tooltip("Keep this enabled. The computer plays the music; Arduino only switches relays.")]
     [SerializeField] private bool playPresetAudioOnComputer = true;
-    [Tooltip("Speaker number groups in playback order. Speaker 1 maps to the first Arduino relay output, Speaker 20 maps to the last.")]
+
+    [Header("Relay Sequence")]
+    [Tooltip("Relay/speaker groups in playback order. Speaker 1 maps to the first Arduino relay output, Speaker 20 maps to the last.")]
     [SerializeField]
     private SpeakerGroup[] speakerGroups =
     {
         new SpeakerGroup
         {
-            name = "All 20",
-            speakerNumbers = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 }
+            name = "Test 1-4",
+            speakerNumbers = new[] { 1, 2, 3, 4 }
         },
     };
     [Tooltip("0 means loop forever.")]
     [SerializeField, Min(0)] private int repeatCount = 1;
     [SerializeField, Min(0.01f)] private float speakerPlaySeconds = 0.5f;
     [SerializeField] private bool useAudioClipLength = true;
+    [Tooltip("Small delay after relays turn on before Unity starts the music.")]
+    [SerializeField, Min(0f)] private float relayLeadTimeSeconds = 0.05f;
     [SerializeField, Min(0f)] private float gapSeconds = 0.15f;
     [Tooltip("Most Arduino boards reset when the serial port opens, so wait before the first command.")]
     [SerializeField, Min(0f)] private float startDelaySeconds = 2f;
@@ -210,9 +215,7 @@ public sealed class ArduinoSpeakerSequencer : MonoBehaviour
             return;
         }
 
-        float durationSeconds = GetPlaybackDurationSeconds();
-        SendGroupCommand(new[] { speakerNumber }, durationSeconds);
-        PlayPresetAudioIfEnabled();
+        PlaySpeakerNumbers(new[] { speakerNumber });
     }
 
     public void PlayAllSpeakers()
@@ -228,9 +231,17 @@ public sealed class ArduinoSpeakerSequencer : MonoBehaviour
             return;
         }
 
-        float durationSeconds = GetPlaybackDurationSeconds();
-        SendGroupCommand(allSpeakerNumbers, durationSeconds);
-        PlayPresetAudioIfEnabled();
+        PlaySpeakerNumbers(allSpeakerNumbers);
+    }
+
+    public void PlaySpeakerNumbers(params int[] speakerNumbers)
+    {
+        if (sequenceRoutine != null)
+        {
+            StopCoroutine(sequenceRoutine);
+        }
+
+        sequenceRoutine = StartCoroutine(PlayOneShotGroupRoutine(speakerNumbers));
     }
 
     private IEnumerator PlaySequenceRoutine()
@@ -265,14 +276,40 @@ public sealed class ArduinoSpeakerSequencer : MonoBehaviour
                     continue;
                 }
 
-                float durationSeconds = GetPlaybackDurationSeconds();
-                SendGroupCommand(speakerGroup.speakerNumbers, durationSeconds);
-                PlayPresetAudioIfEnabled();
-                yield return new WaitForSeconds(durationSeconds + gapSeconds);
+                yield return PlayGroupRoutine(speakerGroup.speakerNumbers);
+                if (gapSeconds > 0f)
+                {
+                    yield return new WaitForSeconds(gapSeconds);
+                }
             }
         }
 
         sequenceRoutine = null;
+    }
+
+    private IEnumerator PlayOneShotGroupRoutine(int[] speakerNumbers)
+    {
+        yield return PlayGroupRoutine(speakerNumbers);
+        sequenceRoutine = null;
+    }
+
+    private IEnumerator PlayGroupRoutine(int[] speakerNumbers)
+    {
+        if (!IsConnected && !Connect())
+        {
+            yield break;
+        }
+
+        float audioDurationSeconds = GetPlaybackDurationSeconds();
+        SendGroupCommand(speakerNumbers, audioDurationSeconds + relayLeadTimeSeconds);
+
+        if (relayLeadTimeSeconds > 0f)
+        {
+            yield return new WaitForSeconds(relayLeadTimeSeconds);
+        }
+
+        PlayPresetAudioIfEnabled();
+        yield return new WaitForSeconds(audioDurationSeconds);
     }
 
     private float GetPlaybackDurationSeconds()

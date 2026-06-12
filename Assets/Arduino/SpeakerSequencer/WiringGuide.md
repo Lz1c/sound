@@ -40,29 +40,29 @@ Use a separate 5V power supply for the speaker modules. For 20 small amplified s
 
 ## Arduino Mega relay mapping
 
-Unity sends speaker numbers 1-20. Arduino maps them to Mega pins:
+Unity sends speaker numbers 1-20. Arduino maps them to Mega pins. The first four are set for your current test wiring:
 
 ```text
-Speaker 01 -> Mega D22
-Speaker 02 -> Mega D23
-Speaker 03 -> Mega D24
-Speaker 04 -> Mega D25
-Speaker 05 -> Mega D26
-Speaker 06 -> Mega D27
-Speaker 07 -> Mega D28
-Speaker 08 -> Mega D29
-Speaker 09 -> Mega D30
-Speaker 10 -> Mega D31
-Speaker 11 -> Mega D32
-Speaker 12 -> Mega D33
-Speaker 13 -> Mega D34
-Speaker 14 -> Mega D35
-Speaker 15 -> Mega D36
-Speaker 16 -> Mega D37
-Speaker 17 -> Mega D38
-Speaker 18 -> Mega D39
-Speaker 19 -> Mega D40
-Speaker 20 -> Mega D41
+Speaker 01 -> Mega D2
+Speaker 02 -> Mega D3
+Speaker 03 -> Mega D4
+Speaker 04 -> Mega D5
+Speaker 05 -> Mega D22
+Speaker 06 -> Mega D23
+Speaker 07 -> Mega D24
+Speaker 08 -> Mega D25
+Speaker 09 -> Mega D26
+Speaker 10 -> Mega D27
+Speaker 11 -> Mega D28
+Speaker 12 -> Mega D29
+Speaker 13 -> Mega D30
+Speaker 14 -> Mega D31
+Speaker 15 -> Mega D32
+Speaker 16 -> Mega D33
+Speaker 17 -> Mega D34
+Speaker 18 -> Mega D35
+Speaker 19 -> Mega D36
+Speaker 20 -> Mega D37
 ```
 
 If your relay module turns on when the control pin is LOW, keep this in `SpeakerSequencer.ino`:
