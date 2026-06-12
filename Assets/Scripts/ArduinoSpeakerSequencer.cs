@@ -104,6 +104,10 @@ public sealed class ArduinoSpeakerSequencer : MonoBehaviour
         {
             PlaySequence();
         }
+        else if (Input.GetKeyDown(KeyCode.T))
+        {
+            RunRelayTest();
+        }
         else if (Input.GetKeyDown(KeyCode.S))
         {
             StopSequence();
@@ -250,6 +254,16 @@ public sealed class ArduinoSpeakerSequencer : MonoBehaviour
         }
 
         PlaySpeakerNumbers(allSpeakerNumbers);
+    }
+
+    public void RunRelayTest()
+    {
+        if (!IsConnected && !Connect())
+        {
+            return;
+        }
+
+        SendLine("TEST");
     }
 
     public void PlaySpeakerNumbers(params int[] speakerNumbers)

@@ -6,6 +6,9 @@ const size_t CommandBufferSize = 128;
 const size_t SpeakerCount = 20;
 const size_t MaxActivePins = SpeakerCount;
 const bool RelayActiveLow = true;
+const bool SelfTestOnStartup = true;
+const size_t SelfTestRelayCount = 4;
+const unsigned long SelfTestStepMs = 250;
 const int RelayPins[SpeakerCount] = {
     2, 3, 4, 5,
     22, 23, 24, 25,
@@ -30,6 +33,11 @@ void setup()
 
     Serial.begin(BaudRate);
     Serial.println("READY");
+
+    if (SelfTestOnStartup)
+    {
+        runRelaySelfTest(SelfTestRelayCount);
+    }
 }
 
 void loop()
@@ -72,6 +80,13 @@ void handleCommand(char *line)
     if (strcmp(command, "PING") == 0)
     {
         Serial.println("PONG");
+        return;
+    }
+
+    if (strcmp(command, "TEST") == 0)
+    {
+        runRelaySelfTest(SelfTestRelayCount);
+        Serial.println("OK TEST");
         return;
     }
 
@@ -169,4 +184,21 @@ void setRelay(int relayPin, bool enabled)
 {
     bool outputHigh = RelayActiveLow ? !enabled : enabled;
     digitalWrite(relayPin, outputHigh ? HIGH : LOW);
+}
+
+void runRelaySelfTest(size_t relayCount)
+{
+    if (relayCount > SpeakerCount)
+    {
+        relayCount = SpeakerCount;
+    }
+
+    stopActiveSpeaker();
+    for (size_t index = 0; index < relayCount; index++)
+    {
+        setRelay(RelayPins[index], true);
+        delay(SelfTestStepMs);
+        setRelay(RelayPins[index], false);
+        delay(SelfTestStepMs);
+    }
 }
